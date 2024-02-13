@@ -45,7 +45,7 @@ func ResourceAuthorization() *schema.Resource {
 								Schema: map[string]*schema.Schema{
 									"id": {
 										Type:     schema.TypeString,
-										Required: true,
+										Optional: true,
 									},
 									"org": {
 										Type:     schema.TypeString,
@@ -96,7 +96,6 @@ func resourceAuthorizationCreate(d *schema.ResourceData, meta interface{}) error
 		OrgID:       &orgId,
 		Permissions: &permissions,
 	}
-
 	result, err := influx.AuthorizationsAPI().CreateAuthorization(context.Background(), &authorizations)
 	if err != nil {
 		return fmt.Errorf("error creating authorization: %e", err)
@@ -174,20 +173,24 @@ func getPermissions(input interface{}) []domain.Permission {
 			resourceSet := perm["resource"].(*schema.Set).List()
 			for _, resource := range resourceSet {
 				res := resource.(map[string]interface{})
-				var id, org_id, name, org = "", "", "", ""
-				if res["id"] != nil {
-					id = res["id"].(string)
+				var id, org_id, name, org *string = nil, nil, nil, nil
+				if res["id"] != nil && res["id"] != "" {
+					x := res["id"].(string)
+					id = &x
 				}
-				if res["org_id"] != nil {
-					org_id = res["org_id"].(string)
+				if res["org_id"] != nil && res["org_id"] != "" {
+					x := res["org_id"].(string)
+					org_id = &x
 				}
-				if res["name"] != nil {
-					name = res["name"].(string)
+				if res["name"] != nil && res["name"] != "" {
+					x := res["name"].(string)
+					name = &x
 				}
-				if res["org"] != nil {
-					org = res["org"].(string)
+				if res["org"] != nil && res["org"] != "" {
+					x := res["org"].(string)
+					org = &x
 				}
-				Resource := domain.Resource{Type: domain.ResourceType(res["type"].(string)), Id: &id, OrgID: &org_id, Name: &name, Org: &org}
+				Resource := domain.Resource{Type: domain.ResourceType(res["type"].(string)), Id: id, OrgID: org_id, Name: name, Org: org}
 				each := domain.Permission{Action: domain.PermissionAction(perm["action"].(string)), Resource: Resource}
 				result = append(result, each)
 			}
